@@ -1,0 +1,5 @@
+echo "Merry Christmas!"
+figlet Merry | delaycat 0.5
+figlet Xmas | delaycat 0.5
+xmastree | delaycat 0.3
+exit

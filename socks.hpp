@@ -45,6 +45,7 @@ class SockSession: public enable_shared_from_this<SockSession> {
          void firewall();
          void printReqMesg();
          void modeAction();
+         void dstAccept();
          void connectToDest();
          void sendReply();
          void relayData();

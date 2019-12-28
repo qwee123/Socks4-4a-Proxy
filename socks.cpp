@@ -6,7 +6,7 @@ extern io_service global_io_service;
 SockSession::SockSession(ip::tcp::socket socket): csock(move(socket)), dstsock(global_io_service)
             , resolver(global_io_service) {
     cout << "Session Build!!" << endl;
-    transmit_buf_size = 1024;
+    transmit_buf_size = 5120;
 }
 
 SockSession::~SockSession(){
@@ -54,15 +54,24 @@ void SockSession::modeAction(){
     else if (cd == 0x2){
         dst_acc = make_shared<ip::tcp::acceptor>(global_io_service, ip::tcp::endpoint(ip::tcp::v4(), 0));
         sendReply();
-        try{
-            dst_acc->accept(dstsock);
-        }
-        catch(const boost::system::system_error& err){
-            cerr << "Error on accept FTP server: " << err.what() << endl;
-            exit(0);
-        }
+        dstAccept();
+        if(dstsock.remote_endpoint().address() != dst_ep.address())  firewall_permission = false;
+       
+        sendReply();
+        transmit_buf_size = 51200;
+        relayData();
     }
     else    cerr << "Unknown CD number!" << endl;
+}
+
+void SockSession::dstAccept(){
+    try{
+        dst_acc->accept(dstsock);
+    }
+    catch(const boost::system::system_error& err){
+        cerr << "Error on accpet FTP server: " << err.what() << endl;
+        exit(0);
+    }
 }
 
 void SockSession::firewall(){
@@ -116,9 +125,15 @@ void SockSession::sendReply(){
     if(firewall_permission && cd == 0x2 && dst_acc != NULL){  //for bind mode
         reply[2] = (uint8_t)(dst_acc->local_endpoint().port()>>8);
         reply[3] = (uint8_t)(dst_acc->local_endpoint().port() & 0xff);
-        cout << +reply[2] << " " << +reply[3] << endl;
-        reply[1] = 91;
-    }
+        
+        vector<string> address;
+        string addr_str = dst_acc->local_endpoint().address().to_string();
+        boost::algorithm::split(address, addr_str, boost::is_any_of("."));
+        reply[4] = stoul(address[0], nullptr, 0);
+        reply[5] = stoul(address[1], nullptr, 0);
+        reply[6] = stoul(address[2], nullptr, 0);
+        reply[7] = stoul(address[3], nullptr, 0);
+   }
  
     try{ 
         csock.send(buffer(reply));
@@ -156,22 +171,30 @@ void SockSession::parseRequest(){
 }
 
 void SockSession::printReqMesg(){
-    cout << "VN: " << +vn << endl;
-    cout << "CD: " << +cd << endl;
-    cout << "DSTPORT: " << dst_port << endl; 
-    cout << "DSTIP: " << +dst_ip[0] << "." << +dst_ip[1] << "." << +dst_ip[2] << "." << +dst_ip[3] << endl;
+    cout << endl << "-------------------------------------------" << endl;
+    cout << "<S_IP>: " << csock.remote_endpoint().address().to_string() << endl;
+    cout << "<S_PORT>: " << csock.remote_endpoint().port() << endl;
+    cout << "<D_IP>: " << +dst_ip[0] << "." << +dst_ip[1] << "." << +dst_ip[2] << "." << +dst_ip[3] << endl;
+    cout << "<D_PORT>: " << dst_port << endl;
+    cout << "<Command>: ";
+    if(cd == 0x1)    cout << "Connect" << endl;
+    else if(cd == 0x2)    cout << "Bind" << endl;
+    else cout << "Unknown" << endl;
+    cout << "<Reply>: ";
+    if(firewall_permission)   cout << "Accept" << endl;
+    else   cout << "Reject" << endl;    
 
-    cout << "UserID: ";
+    cout << "<UserID>: ";
     for(auto itr = userid.begin();itr != userid.end(); itr++){
         cout << *itr;
     }
     cout << endl;
 
-    cout << "DomainName: ";
+    cout << "<DomainName>: ";
     for(auto itr = domain_name.begin();itr != domain_name.end();itr++){
         cout << *itr;
     }
-    cout << endl;
+    cout << endl << "------------------------------------------" <<  endl;
 }
 
 void SockSession::relayData(){

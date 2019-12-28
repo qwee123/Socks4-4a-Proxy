@@ -1,8 +1,0 @@
-ls | delaycat 0.5
-figlet NP | cowsay -n | delaycat 0.2
-echo "I'm going to sleep for awhile."
-sleep 6
-echo "Hi :D"
-echo "I'm awake"
-echo "Bye :)"
-exit

@@ -1,4 +1,0 @@
-removetag test.html | number | delaycat 0.5
-removetag test.html | number | number | delaycat 0.5
-ls | number | cowsay -n | delaycat 0.5
-exit

@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 #include <boost/algorithm/string/predicate.hpp>
+#include <fstream>
 
 using namespace std;
 using namespace boost::asio;
@@ -43,6 +44,8 @@ class SockSession: public enable_shared_from_this<SockSession> {
          void parseRequest();
          void resolveRequest();
          void firewall();
+         bool checkMode(const string&);
+         bool checkIP(const string&, vector<string>*);
          void printReqMesg();
          void modeAction();
          void dstAccept();

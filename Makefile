@@ -11,6 +11,8 @@ console: renderConsoleCGI.hpp renderConsoleCGI.cpp
 http: http_server.cpp
 	$(CC) -I $(boost_lib) $(linker) $^ -o http_server
 
-sock: server.cpp socks.hpp socks.cpp 
+sock: socks_server.cpp socks.hpp socks.cpp 
 	$(CC) -I $(boost_lib) $(linker) $^ -o sock_server
 
+test: test.cpp
+	$(CC) -I $(boost_lib) $(linker) $^ -o test

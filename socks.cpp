@@ -75,8 +75,44 @@ void SockSession::dstAccept(){
 }
 
 void SockSession::firewall(){
-    firewall_permission = true;
+    firewall_permission = false; //deny all in defalut
 
+    vector<string> ip_str;
+    ip_str.reserve(4);
+    ip_str.push_back(to_string(dst_ip[0]));
+    ip_str.push_back(to_string(dst_ip[1]));
+    ip_str.push_back(to_string(dst_ip[2]));
+    ip_str.push_back(to_string(dst_ip[3]));
+
+    ifstream conf("socks.conf");
+    vector<string> conf_buf;
+    conf_buf.resize(3);
+ 
+    while(conf >> conf_buf[0] >> conf_buf[1] >> conf_buf[2]){
+        if(!checkMode(conf_buf[1]))   continue; //check if the mode is satisfied        
+        if(!checkIP(conf_buf[2], &ip_str))    continue; //check if the ip is satisfied
+        
+        firewall_permission = bool(conf_buf[0] == "permit"); 
+        return ;            
+    } 
+    conf.close();
+}
+
+bool SockSession::checkMode(const string& mode){
+    if(mode == "c" && cd == 0x1)    return true;
+    else if(mode == "b" && cd == 0x2)    return true;
+    return false;
+}
+
+bool SockSession::checkIP(const string& conf_ip, vector<string> *ip_str){
+    vector<string> ip_ele;
+    boost::algorithm::split(ip_ele, conf_ip, boost::is_any_of("."));
+    if(ip_ele.size() != 4)  return false;
+
+    for(int index = 0;index < 4;index++){
+        if(ip_ele[index] != "*" && ip_ele[index] != (*ip_str)[index])    return false;
+    }
+    return true;
 }
 
 void SockSession::resolveRequest(){

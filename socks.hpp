@@ -47,6 +47,7 @@ class SockSession: public enable_shared_from_this<SockSession> {
          bool checkMode(const string&);
          bool checkIP(const string&, vector<string>*);
          void printReqMesg();
+         void verifyFirewallDecision();
          void modeAction();
          void dstAccept();
          void connectToDest();

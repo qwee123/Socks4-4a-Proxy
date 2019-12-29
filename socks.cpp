@@ -41,7 +41,16 @@ void SockSession::startService(){
     resolveRequest(); //build endpoint for later usage
     firewall(); //if deny, exit immediately
     printReqMesg();
+    verifyFirewallDecision();
     modeAction();
+}
+
+void SockSession::verifyFirewallDecision(){
+    if(firewall_permission)    return;
+
+    sendReply();
+    this->close();
+    exit(0);
 }
 
 void SockSession::modeAction(){
@@ -79,10 +88,7 @@ void SockSession::firewall(){
 
     vector<string> ip_str;
     ip_str.reserve(4);
-    ip_str.push_back(to_string(dst_ip[0]));
-    ip_str.push_back(to_string(dst_ip[1]));
-    ip_str.push_back(to_string(dst_ip[2]));
-    ip_str.push_back(to_string(dst_ip[3]));
+    boost::algorithm::split(ip_str, (const string&)(dst_ep.address().to_string()), boost::is_any_of("."));
 
     ifstream conf("socks.conf");
     vector<string> conf_buf;
